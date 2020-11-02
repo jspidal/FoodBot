@@ -1,7 +1,7 @@
 import { Argument } from 'discord-akairo';
 import { TextChannel } from 'discord.js';
 import { Message } from 'discord.js';
-import { FoodClient } from '../../client/foodClient';
+import { OrderModel } from '../../model/order';
 import { FoodBotCommand } from '../../struct/command/foodCommand';
 import { OrderTicket } from '../../struct/order/orderTicket';
 
@@ -33,6 +33,7 @@ export default class OrderCommand extends FoodBotCommand {
 
 	async exec(msg: Message, { order }: { order: string }) {
 		if (!msg.guild) return;
+		if (OrderModel.exists({user: msg.author.id})) return msg.reply("You already have an active order")
 		let ticket = new OrderTicket({
 			content: order,
 			guild: msg.guild,
