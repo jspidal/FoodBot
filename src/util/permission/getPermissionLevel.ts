@@ -1,6 +1,6 @@
 import { FoodClient } from '../../client/foodClient';
 import { PermissionLevel } from './permissionLevel';
-import { checkRank } from '../rank/rankUtils';
+import { getRank } from '../rank/rankUtils';
 
 export async function getPermissionLevel(
 	userID: string,
@@ -8,7 +8,7 @@ export async function getPermissionLevel(
 ): Promise<number> {
 	if (client.ownerID === userID) return PermissionLevel.BotDeveloper;
 
-	let rank: String | undefined = await checkRank(userID);
+	let rank: String | undefined = await getRank(userID);
 
 	if (!rank) return PermissionLevel.Everyone;
 

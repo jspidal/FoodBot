@@ -3,7 +3,7 @@ import { Message } from 'discord.js';
 import { FoodClient } from '../../../../client/foodClient';
 import { FoodBotCommand } from '../../../../struct/command/foodCommand';
 import { PermissionLevel } from '../../../../util/permission/permissionLevel';
-import { demote } from '../../../../util/rank/rankUtils';
+import { demoteUser, isStaff } from '../../../../util/rank/rankUtils';
 
 export default class StaffDemoteCommand extends FoodBotCommand {
 	constructor() {
@@ -26,7 +26,12 @@ export default class StaffDemoteCommand extends FoodBotCommand {
 	}
 
 	async exec(msg: Message, { user }: { user: User }) {
-		let nextRank: string = await demote(user.id, this.client);
-		return msg.reply(`${user} has been promoted to ${nextRank}`);
+		if (!(await isStaff(user.id))) return msg.reply(`${user} is not staff`);
+		const nextRank: string = await demoteUser(
+			user.id,
+			msg.author.id,
+			this.client
+		);
+		return msg.reply(`${user} has been demoted to ${nextRank}`);
 	}
 }

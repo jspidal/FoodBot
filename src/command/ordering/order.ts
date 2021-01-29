@@ -33,15 +33,16 @@ export default class OrderCommand extends FoodBotCommand {
 
 	async exec(msg: Message, { order }: { order: string }) {
 		if (!msg.guild) return;
-		if (OrderModel.exists({user: msg.author.id})) return msg.reply("You already have an active order")
-		let ticket = new OrderTicket({
+		if (await OrderModel.exists({ user: msg.author.id }))
+			return msg.reply('You already have an active order');
+		const ticket = new OrderTicket({
 			content: order,
 			guild: msg.guild,
 			channel: msg.channel as TextChannel,
 			user: msg.author,
 			client: this.client,
 		});
-		let t = await ticket.submit();
+		const t = await ticket.submit();
 		if (!t) return;
 		return msg.channel.send(
 			`Order for ${order} has been received (ID: ${t.id})`

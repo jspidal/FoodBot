@@ -3,7 +3,7 @@ import { Message } from 'discord.js';
 import { FoodClient } from '../../../../client/foodClient';
 import { FoodBotCommand } from '../../../../struct/command/foodCommand';
 import { PermissionLevel } from '../../../../util/permission/permissionLevel';
-import { promote } from '../../../../util/rank/rankUtils';
+import { promoteUser } from '../../../../util/rank/rankUtils';
 
 export default class StaffPromoteCommand extends FoodBotCommand {
 	constructor() {
@@ -26,7 +26,11 @@ export default class StaffPromoteCommand extends FoodBotCommand {
 	}
 
 	async exec(msg: Message, { user }: { user: User }) {
-		let nextRank: string = await promote(user.id, this.client);
+		const nextRank: string = await promoteUser(
+			user.id,
+			msg.author.id,
+			this.client
+		);
 		return msg.reply(`${user} has been promoted to ${nextRank}`);
 	}
 }

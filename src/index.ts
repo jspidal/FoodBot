@@ -11,7 +11,7 @@ require('dotenv').config();
 	const client: FoodClient = new FoodClient({
 		prefix: process.env.PREIFX || ';',
 		mongo: connection,
-		ownerID: '283739077507809288'
+		ownerID: '283739077507809288',
 	});
 	client.start(process.env.TOKEN!);
 })();

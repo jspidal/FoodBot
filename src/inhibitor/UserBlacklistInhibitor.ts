@@ -14,7 +14,7 @@ export default class UserBlacklistInhibitor extends Inhibitor {
 		if (calledCmd.command?.categoryID != 'ordering') return false;
 
 		const blacklist = await BlacklistModel.exists({
-			_id: msg.author.id
+			_id: msg.author.id,
 		});
 		return blacklist;
 	}

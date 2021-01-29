@@ -10,6 +10,9 @@ export class Staff {
 	@prop({ required: true, type: Date })
 	public dateHired!: Date;
 
+	@prop({ required: true, type: String })
+	public hiredBy!: string;
+
 	@prop({ required: false, type: Date })
 	public recentOrder?: Date;
 

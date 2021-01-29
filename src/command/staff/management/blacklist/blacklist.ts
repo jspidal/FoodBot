@@ -27,12 +27,12 @@ export default class BlacklistCommand extends FoodBotCommand {
 						retry: (msg: Message) =>
 							`${msg.author}, please provide a valid guild/user.`,
 					},
-                },
-                {
-                    id: 'info',
-                    match: 'flag',
-                    flag: ['-i', '--info']
-                },
+				},
+				{
+					id: 'info',
+					match: 'flag',
+					flag: ['-i', '--info'],
+				},
 				{
 					id: 'reason',
 					type: 'string',
@@ -43,21 +43,34 @@ export default class BlacklistCommand extends FoodBotCommand {
 		});
 	}
 
-	async exec(msg: Message, { blacklistInput, info, reason }: { blacklistInput: User | Guild, info: string, reason: string }) {
-        if (info) {
-            const blacklistInfo = await BlacklistModel.findOne({_id: blacklistInput.id})
-            if (!blacklistInfo) return msg.reply('That user is not blacklisted');
-            const type = blacklistInput instanceof User ? 'User' : 'Guild';
-            const infoEmbed = new MessageEmbed()
-                .setTitle('Blacklist Information')
-                .addField(type, blacklistInput, true)
-                .addField('Reason', (blacklistInfo?.reason || 'No reason set'), true)
-                .addField('Admin', this.client.users.cache.get(blacklistInfo!.admin)?.tag, true)
-                .addField('Date Created', dayjs(blacklistInfo?.date).format('llll'))
-                .setColor('RED')
-                .setTimestamp();
-            return msg.reply(`Here's your requested info`, {embed: infoEmbed});
-        }
+	async exec(
+		msg: Message,
+		{
+			blacklistInput,
+			info,
+			reason,
+		}: { blacklistInput: User | Guild; info: string; reason: string }
+	) {
+		const type = blacklistInput instanceof User ? 'User' : 'Guild';
+		if (info) {
+			const blacklistInfo = await BlacklistModel.findOne({
+				_id: blacklistInput.id,
+			});
+			if (!blacklistInfo) return msg.reply('That user is not blacklisted');
+			const infoEmbed = new MessageEmbed()
+				.setTitle('Blacklist Information')
+				.addField(type, blacklistInput, true)
+				.addField('Reason', blacklistInfo?.reason || 'No reason set', true)
+				.addField(
+					'Admin',
+					this.client.users.cache.get(blacklistInfo!.admin)?.tag,
+					true
+				)
+				.addField('Date Created', dayjs(blacklistInfo?.date).format('llll'))
+				.setColor('RED')
+				.setTimestamp();
+			return msg.reply(`Here's your requested info`, { embed: infoEmbed });
+		}
 		//Don't allow admins and bot developers to be blacklisted.
 		if (
 			blacklistInput instanceof User &&
@@ -69,18 +82,25 @@ export default class BlacklistCommand extends FoodBotCommand {
 		if (await BlacklistModel.exists({ _id: blacklistInput.id }))
 			return msg.reply(`${blacklistInput} is already blacklisted`);
 
-		await BlacklistModel.create({
+		const blacklistModel = await BlacklistModel.create({
 			_id: blacklistInput.id,
 			admin: msg.author.id,
 			date: Date.now(),
 			reason: reason || undefined,
 		});
+		if (type === 'User')
+			this.client.emit('userBlacklist', blacklistModel, blacklistInput as User);
+		else
+			this.client.emit(
+				'guildBlacklist',
+				blacklistModel,
+				blacklistInput as Guild
+			);
 
 		msg.reply(
 			`Sucessfully blacklisted ${blacklistInput} ${
 				reason ? `for ${reason}` : ''
 			}`
-        );
-        
+		);
 	}
 }

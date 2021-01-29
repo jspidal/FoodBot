@@ -53,6 +53,7 @@ export default class DeleteOrderCommand extends FoodBotCommand {
 				msg.channel.send(`User was unable to be notified of order deletion.`);
 				console.error(e);
 			});
+		this.client.emit('orderDelete', order, msg.author, reason)
 		order.deleteOne();
 		msg.channel.send(`${msg.author} has deleted order \`${order.id}\``);
 	}

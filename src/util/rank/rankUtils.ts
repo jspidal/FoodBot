@@ -1,20 +1,18 @@
 import dayjs from 'dayjs';
-import { DocumentQuery } from 'mongoose';
 import { FoodClient } from '../../client/foodClient';
-import { StaffModel as Staff } from '../../model/staff';
+import { StaffModel as Staff, StaffModel } from '../../model/staff';
 import { getPermissionLevel } from '../permission/getPermissionLevel';
 import { PermissionLevel } from '../permission/permissionLevel';
 
 /*
     Moves the provided user's rank up by 1
 */
-export async function promote(
+export async function promoteUser(
 	userID: string,
+	promotedBy: string,
 	client: FoodClient
 ): Promise<string> {
-	//let rank = await checkRank(userID)
-
-	let permLevel = await getPermissionLevel(userID, client);
+	const permLevel = await getPermissionLevel(userID, client);
 
 	if (
 		permLevel === PermissionLevel.BotDeveloper &&
@@ -24,10 +22,10 @@ export async function promote(
 	}
 
 	if (permLevel === PermissionLevel.Everyone) {
-		await setupUser(userID);
+		await setupUser(userID, promotedBy);
 		return 'Trainee';
 	} else if (permLevel < PermissionLevel.Admin) {
-		let newRank: string = PermissionLevel[permLevel + 1];
+		const newRank: string = PermissionLevel[permLevel + 1];
 		await Staff.updateOne({ staffID: userID }, { staffRank: newRank });
 		return newRank;
 	}
@@ -38,18 +36,15 @@ export async function promote(
 /*
     Moves the provided user's rank down by 1
 */
-export async function demote(
+export async function demoteUser(
 	userID: string,
+	demotedBy: string,
 	client: FoodClient
-): Promise<string> {
-	let rank = await checkRank(userID);
-
-	let permLevel = await getPermissionLevel(userID, client);
-	if (permLevel === PermissionLevel.Everyone) {
-		await setupUser(userID);
-	} else if (permLevel > PermissionLevel.Everyone) {
-		let newRank: string = PermissionLevel[permLevel - 1];
-		await Staff.updateOne({ staffID: userID }, { staffRank: newRank });
+) {
+	const permLevel = await getPermissionLevel(userID, client);
+	if (permLevel > PermissionLevel.Everyone) {
+		const newRank = PermissionLevel[permLevel - 1];
+		await setRank(userID, demotedBy, newRank);
 		return newRank;
 	}
 
@@ -59,9 +54,9 @@ export async function demote(
 /*
     Returns a user's current rank, or Customer if their rank is not set
 */
-export async function checkRank(userID: string): Promise<String | undefined> {
-	if (!Staff.exists({ staffID: userID })) return 'Customer';
-	let result = await Staff.findOne({ staffID: userID }).exec();
+export async function getRank(userID: string) {
+	if (!(await isStaff(userID))) return 'Customer';
+	const result = await Staff.findOne({ staffID: userID }).exec();
 	if (!result) return;
 	return result.staffRank;
 }
@@ -69,30 +64,49 @@ export async function checkRank(userID: string): Promise<String | undefined> {
 /*
     Set a user's rank to the string provided
 */
-export async function setRank(userID: string, rank: string) {
-	if (!Staff.exists({ staffID: userID }))
-		await setupUser(userID, rank).catch(e => console.error(e));
-	else {
-		await Staff.updateOne({ staffID: userID }, { staffRank: rank });
+export async function setRank(userID: string, hiredBy: string, rank: string) {
+	if (!(await isStaff(userID))) {
+		if (await Staff.findOne({ staffID: userID, rank: 'Customer' }).exec()) {
+			const foundStaff = await Staff.findOne({ staffID: userID }).exec();
+			await foundStaff?.updateOne({ staffRank: rank, hiredBy: hiredBy });
+			return foundStaff;
+		}
+		return await setupUser(userID, hiredBy, rank).catch(e => console.error(e));
+	} else {
+		const foundStaff = await Staff.findOne({ staffID: userID }).exec();
+		await foundStaff?.updateOne({ staffRank: rank, hiredBy: hiredBy });
+		return foundStaff;
 	}
 }
 
-export function isStaff(userID: string): boolean {
-	if (Staff.exists({ staffID: userID, $nor: [{ staffRank: 'Customer' }] }))
-		return true;
-	return false;
+export async function isStaff(userID: string) {
+	return await Staff.exists({
+		staffID: userID,
+		$nor: [{ staffRank: 'Customer' }],
+	});
 }
 
 /*
     Create a new cook with rank Trainee if no rank is provided.
 */
-async function setupUser(userID: string, rank: string = 'Trainee') {
-	let newStaff = new Staff({
+async function setupUser(
+	userID: string,
+	hiredBy: string,
+	rank: string = 'Trainee'
+) {
+	const newStaff = await Staff.create({
 		staffID: userID,
 		staffRank: rank,
 		dateHired: dayjs().format('MM/DD/YYYY'),
+		hiredBy: hiredBy,
 		ordersClaimed: 0,
 		ordersCompleted: 0,
-	});
-	await newStaff.save().catch(e => console.error(e));
+	}).catch(e => console.error(e));
+
+	return newStaff;
+}
+
+export async function deleteUser(userID: string) {
+	const foundStaff = await Staff.findOneAndDelete({ staffID: userID });
+	if (foundStaff) return foundStaff;
 }

@@ -22,20 +22,43 @@ export default class UnblacklistCommand extends FoodBotCommand {
 							`${msg.author}, please provide a valid guild/user.`,
 					},
 				},
+				{
+					id: 'reason',
+					type: 'string',
+					match: 'option',
+					flag: ['-r', '--reason'],
+				},
 			],
 		});
 	}
 
 	async exec(
 		msg: Message,
-		{ blacklistInput }: { blacklistInput: User | Guild }
+		{ blacklistInput, reason }: { blacklistInput: User | Guild; reason: string }
 	) {
 		if (!(await BlacklistModel.exists({ _id: blacklistInput.id })))
 			return msg.reply(`${blacklistInput} is not blacklisted`);
 
-		await BlacklistModel.deleteOne({
+		const unblacklistModel = await BlacklistModel.findOne({
 			_id: blacklistInput.id,
 		});
-		msg.reply(`Sucessfully unblacklisted ${blacklistInput}`);
+
+		await unblacklistModel?.deleteOne();
+		if (blacklistInput instanceof User)
+			this.client.emit(
+				'userUnblacklist',
+				unblacklistModel!,
+				blacklistInput as User,
+				reason
+			);
+		else
+			this.client.emit(
+				'guildUnblacklist',
+				unblacklistModel!,
+				blacklistInput as Guild,
+				reason
+			);
+
+		return msg.reply(`Sucessfully unblacklisted ${blacklistInput}`);
 	}
 }

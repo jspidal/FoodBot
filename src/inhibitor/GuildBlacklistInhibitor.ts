@@ -5,8 +5,8 @@ import { BlacklistModel } from '../model/blacklist';
 export default class GuildBlacklistInhibitor extends Inhibitor {
 	constructor() {
 		super('guildblacklist', {
-            reason: 'guild blacklisted',
-            priority: 1
+			reason: 'guild blacklisted',
+			priority: 1,
 		});
 	}
 
@@ -15,7 +15,7 @@ export default class GuildBlacklistInhibitor extends Inhibitor {
 		if (calledCmd.command?.categoryID != 'ordering') return false;
 
 		const blacklist = await BlacklistModel.exists({
-			_id: msg.guild?.id
+			_id: msg.guild?.id,
 		});
 		return blacklist;
 	}

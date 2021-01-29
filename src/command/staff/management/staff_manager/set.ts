@@ -2,7 +2,7 @@ import { User } from 'discord.js';
 import { Message } from 'discord.js';
 import { FoodBotCommand } from '../../../../struct/command/foodCommand';
 import { PermissionLevel } from '../../../../util/permission/permissionLevel';
-import { setRank } from '../../../../util/rank/rankUtils';
+import { getRank, setRank } from '../../../../util/rank/rankUtils';
 
 export default class StaffPromoteCommand extends FoodBotCommand {
 	constructor() {
@@ -34,10 +34,14 @@ export default class StaffPromoteCommand extends FoodBotCommand {
 	}
 
 	async exec(msg: Message, { user, role }: { user: User; role: string }) {
-		await setRank(user.id, role)
-			.then(() => {
-				return msg.reply(`${user} has been set to \`${role}\``);
-			})
-			.catch(e => console.error(e));
+		const previousRank = await getRank(user.id);
+		if (!previousRank) return;
+		const newInfo = await setRank(user.id, msg.author.id, role).catch(e => console.error(e));
+		if (newInfo){
+			this.client.emit('staffUpdate', newInfo, user, previousRank)			
+			return msg.reply(`${user} has been set to \`${role}\``);
+		}
+		
+			
 	}
 }

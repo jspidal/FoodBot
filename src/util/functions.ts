@@ -17,10 +17,33 @@ export function sendKitchenMsg(
 	content?: string,
 	embed?: MessageEmbed
 ) {
-	const channel = client.channels.cache.get(process.env.KITCHEN!) as TextChannel;
+	const channel = client.channels.cache.get(
+		process.env.KITCHEN_CHANNEL!
+	) as TextChannel;
 	if (!channel) return;
 	if (!content) {
-		if (!embed) throw new SyntaxError('Missing Message Content');
+		if (!embed) throw new TypeError('Missing Message Content');
+		else {
+			return channel.send(embed);
+		}
+	}
+	if (embed) {
+		return channel.send(content, embed);
+	}
+	return channel.send(content);
+}
+
+export function sendLogMsg(
+	client: FoodClient,
+	content?: string,
+	embed?: MessageEmbed
+) {
+	const channel = client.channels.cache.get(
+		process.env.LOG_CHANNEL!
+	) as TextChannel;
+	if (!channel) return;
+	if (!content) {
+		if (!embed) throw new TypeError('Missing Message Content');
 		else {
 			return channel.send(embed);
 		}

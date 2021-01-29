@@ -2,7 +2,7 @@ import { User } from 'discord.js';
 import { Message } from 'discord.js';
 import { FoodBotCommand } from '../../../../struct/command/foodCommand';
 import { PermissionLevel } from '../../../../util/permission/permissionLevel';
-import { setRank } from '../../../../util/rank/rankUtils';
+import { deleteUser } from '../../../../util/rank/rankUtils';
 
 export default class StaffPromoteCommand extends FoodBotCommand {
 	constructor() {
@@ -25,10 +25,10 @@ export default class StaffPromoteCommand extends FoodBotCommand {
 	}
 
 	async exec(msg: Message, { user }: { user: User }) {
-		await setRank(user.id, 'Customer')
-			.then(() => {
-				return msg.reply(`${user} has been set to \`Customer\``);
-			})
-			.catch(e => console.error(e));
+		const deletedEntry = await deleteUser(user.id).catch(e => console.error(e));
+		if (deletedEntry) {
+			msg.channel.send(`${user.username} has been removed`);
+			this.client.emit('staffRemove', deletedEntry, user);
+		}
 	}
 }

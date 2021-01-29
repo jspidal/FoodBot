@@ -10,6 +10,7 @@ import { foodClientOptions } from './foodClientOptions';
 import { MESSAGES } from '../util/constants';
 import { OrderModel } from '../model/order';
 import { OrderStatus } from '../struct/order/orderStatus';
+import FoodClientEvents from './foodClientEvents';
 
 export class FoodClient extends AkairoClient {
 	commandHandler: CommandHandler;
@@ -107,5 +108,20 @@ declare module 'discord-akairo' {
 		ownerIds: string[] | undefined;
 
 		start(token: string): void;
+
+		on<K extends keyof FoodClientEvents>(
+			event: K,
+			listener: (...args: FoodClientEvents[K]) => void
+		): this;
+
+		once<K extends keyof FoodClientEvents>(
+			event: K,
+			listener: (...args: FoodClientEvents[K]) => void
+		): this;
+
+		emit<K extends keyof FoodClientEvents>(
+			event: K,
+			...args: FoodClientEvents[K]
+		): boolean;
 	}
 }

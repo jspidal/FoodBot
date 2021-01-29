@@ -25,11 +25,12 @@ export default class StaffPromoteCommand extends FoodBotCommand {
 	}
 
 	async exec(msg: Message, { user }: { user: User }) {
-		if (isStaff(user.id)) return msg.reply(`${user} is already staff`);
-		await setRank(user.id, 'Trainee')
-			.then(() => {
-				return msg.reply(`${user} has been set to \`Trainee\``);
-			})
-			.catch(e => console.error(e));
+		if (await isStaff(user.id)) return msg.reply(`${user} is already staff`);
+		const res = await setRank(user.id, msg.author.id, 'Trainee').catch(e =>
+			console.error(e)
+		);
+
+		if (res) this.client.emit('staffAdd', res, user);
+		return msg.reply(`${user} has been set to \`Trainee\``);
 	}
 }
